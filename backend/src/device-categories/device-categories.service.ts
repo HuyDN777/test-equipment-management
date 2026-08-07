@@ -54,7 +54,7 @@ export class DeviceCategoriesService {
     const category = await this.findOne(id);
 
     const deviceCount = await this.deviceRepository.count({
-      where: { device_category_id: id, is_deleted: false },
+      where: { device_categories_id: id, is_deleted: false },
     });
 
     if (deviceCount > 0) {

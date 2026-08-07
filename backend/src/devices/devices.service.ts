@@ -1,15 +1,19 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
+import { ReportIssueDto } from './dto/report-issue.dto';
 import { Device, DeviceStatus } from './entities/device.entity';
+import { BorrowRequest, BorrowRequestStatus } from '../borrow-requests/entities/borrow-request.entity';
+import { MaintenanceRecord, MaintenanceStatus } from '../maintenance/entities/maintenance.entity';
 
 @Injectable()
 export class DevicesService {
   constructor(
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
+    private dataSource: DataSource,
   ) {}
 
   async create(createDto: CreateDeviceDto) {
@@ -42,7 +46,7 @@ export class DevicesService {
     }
 
     if (category_id) {
-      queryBuilder.andWhere('device.device_category_id = :category_id', { category_id });
+      queryBuilder.andWhere('device.device_categories_id = :category_id', { category_id });
     }
 
     if (status) {
@@ -106,4 +110,69 @@ export class DevicesService {
     await this.deviceRepository.save(device);
     return { message: 'Xóa thiết bị thành công' };
   }
+
+  async reportIssue(deviceId: string, userId: string, reportIssueDto: ReportIssueDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const device = await queryRunner.manager.findOne(Device, {
+        where: { id: deviceId, is_deleted: false },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!device) {
+        throw new NotFoundException('Không tìm thấy thiết bị');
+      }
+
+      if (device.status !== DeviceStatus.Borrowed) {
+        throw new BadRequestException(`Chỉ có thể báo lỗi khi thiết bị đang ở trạng thái 'Borrowed'. Trạng thái hiện tại: ${device.status}`);
+      }
+
+      const activeBorrow = await queryRunner.manager.findOne(BorrowRequest, {
+        where: {
+          device_id: deviceId,
+          users_id: userId,
+          status: BorrowRequestStatus.Approved,
+        },
+      });
+
+      if (!activeBorrow) {
+        throw new ForbiddenException('Bạn không có quyền báo lỗi thiết bị này vì bạn không phải là người đang mượn');
+      }
+
+      device.status = DeviceStatus.Maintenance;
+      await queryRunner.manager.save(device);
+
+      const maintenanceRecord = queryRunner.manager.create(MaintenanceRecord, {
+        device_id: deviceId,
+        reported_by: userId,
+        issue: reportIssueDto.issue,
+        notes: reportIssueDto.notes,
+        status: MaintenanceStatus.InProgress,
+        start_date: new Date(),
+      });
+      const savedRecord = await queryRunner.manager.save(maintenanceRecord);
+
+      await queryRunner.commitTransaction();
+
+      return {
+        message: 'Báo lỗi thiết bị thành công. Thiết bị đã được chuyển sang trạng thái bảo trì.',
+        maintenance_record: savedRecord,
+        device: {
+          id: device.id,
+          code: device.code,
+          name: device.name,
+          status: device.status,
+        },
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 }
+

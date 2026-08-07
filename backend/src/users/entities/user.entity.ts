@@ -1,4 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { BorrowRequest } from '../../borrow-requests/entities/borrow-request.entity';
+import { MaintenanceRecord } from '../../maintenance/entities/maintenance.entity';
+import { AuditLog } from '../../common/entities/audit-log.entity';
 
 export enum UserRole {
   Admin = 'Admin',
@@ -31,6 +34,15 @@ export class User {
 
   @Column({ default: false })
   is_deleted: boolean;
+
+  @OneToMany(() => BorrowRequest, (borrowRequest) => borrowRequest.user)
+  borrowRequests: BorrowRequest[];
+
+  @OneToMany(() => MaintenanceRecord, (maintenanceRecord) => maintenanceRecord.reporter)
+  maintenanceReports: MaintenanceRecord[];
+
+  @OneToMany(() => AuditLog, (auditLog) => auditLog.user)
+  auditLogs: AuditLog[];
 
   @CreateDateColumn()
   created_at: Date;

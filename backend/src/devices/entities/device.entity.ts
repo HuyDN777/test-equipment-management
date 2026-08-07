@@ -1,5 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { DeviceCategory } from '../../device-categories/entities/device-category.entity';
+import { Accessory } from './accessory.entity';
+import { BorrowRequest } from '../../borrow-requests/entities/borrow-request.entity';
+import { MaintenanceRecord } from '../../maintenance/entities/maintenance.entity';
+import { CalibrationRecord } from '../../maintenance/entities/calibration-record.entity';
 
 export enum DeviceStatus {
   Available = 'Available',
@@ -12,11 +16,11 @@ export class Device {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'device_category_id' })
-  device_category_id: string;
+  @Column({ name: 'device_categories_id' })
+  device_categories_id: string;
 
   @ManyToOne(() => DeviceCategory, (category) => category.devices)
-  @JoinColumn({ name: 'device_category_id' })
+  @JoinColumn({ name: 'device_categories_id' })
   category: DeviceCategory;
 
   @Column({ unique: true })
@@ -49,6 +53,18 @@ export class Device {
 
   @Column({ default: false })
   is_deleted: boolean;
+
+  @OneToMany(() => Accessory, (accessory) => accessory.device)
+  accessories: Accessory[];
+
+  @OneToMany(() => BorrowRequest, (borrowRequest) => borrowRequest.device)
+  borrowRequests: BorrowRequest[];
+
+  @OneToMany(() => MaintenanceRecord, (maintenanceRecord) => maintenanceRecord.device)
+  maintenanceRecords: MaintenanceRecord[];
+
+  @OneToMany(() => CalibrationRecord, (calibrationRecord) => calibrationRecord.device)
+  calibrationRecords: CalibrationRecord[];
 
   @CreateDateColumn()
   created_at: Date;

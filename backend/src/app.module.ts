@@ -11,6 +11,7 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { AuthModule } from './auth/auth.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { AuthModule } from './auth/auth.module';
     BorrowRequestsModule, 
     MaintenanceModule, 
     NotificationsModule, 
-    VendorsModule
+    VendorsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
