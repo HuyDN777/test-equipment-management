@@ -4,6 +4,7 @@ import { Accessory } from './accessory.entity';
 import { BorrowRequest } from '../../borrow-requests/entities/borrow-request.entity';
 import { MaintenanceRecord } from '../../maintenance/entities/maintenance.entity';
 import { CalibrationRecord } from '../../maintenance/entities/calibration-record.entity';
+import { DeviceModel } from './device-model.entity';
 
 export enum DeviceStatus {
   Available = 'Available',
@@ -15,6 +16,13 @@ export enum DeviceStatus {
 export class Device {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ name: 'device_model_id' })
+  device_model_id: string;
+
+  @ManyToOne(() => DeviceModel, (deviceModel) => deviceModel.devices)
+  @JoinColumn({ name: 'device_model_id' })
+  deviceModel: DeviceModel;
 
   @Column({ name: 'device_categories_id' })
   device_categories_id: string;
@@ -53,6 +61,9 @@ export class Device {
 
   @Column({ default: false })
   is_deleted: boolean;
+
+  @Column({ type: 'json', nullable: true })
+  specifications: any;
 
   @OneToMany(() => Accessory, (accessory) => accessory.device)
   accessories: Accessory[];

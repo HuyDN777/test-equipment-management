@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Put, Patch, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { BorrowRequestsService } from './borrow-requests.service';
 import { CreateBorrowRequestDto } from './dto/create-borrow-request.dto';
-import { RejectBorrowRequestDto, ReturnDeviceDto, BorrowFilterDto } from './dto/borrow-action.dto';
+import { ApproveBorrowRequestDto, RejectBorrowRequestDto, ReturnDeviceDto, BorrowFilterDto } from './dto/borrow-action.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -23,25 +23,26 @@ export class BorrowRequestsController {
   }
 
   @Get()
+  @Roles(UserRole.Admin)
   findAll(@Request() req: any, @Query() filterDto: BorrowFilterDto) {
     return this.borrowRequestsService.findAll(filterDto, req.user);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.borrowRequestsService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req: any) {
+    return this.borrowRequestsService.findOneForUser(id, req.user);
   }
 
   @Put(':id/approve')
   @Roles(UserRole.Admin)
-  approvePut(@Param('id') id: string) {
-    return this.borrowRequestsService.approve(id);
+  approvePut(@Param('id') id: string, @Body() dto: ApproveBorrowRequestDto) {
+    return this.borrowRequestsService.approve(id, dto);
   }
 
   @Patch(':id/approve')
   @Roles(UserRole.Admin)
-  approvePatch(@Param('id') id: string) {
-    return this.borrowRequestsService.approve(id);
+  approvePatch(@Param('id') id: string, @Body() dto: ApproveBorrowRequestDto) {
+    return this.borrowRequestsService.approve(id, dto);
   }
 
   @Put(':id/reject')
@@ -57,11 +58,13 @@ export class BorrowRequestsController {
   }
 
   @Post(':id/return')
+  @Roles(UserRole.Admin)
   returnDevicePost(@Param('id') id: string, @Body() returnDto: ReturnDeviceDto) {
     return this.borrowRequestsService.returnDevice(id, returnDto);
   }
 
   @Patch(':id/return')
+  @Roles(UserRole.Admin)
   returnDevicePatch(@Param('id') id: string, @Body() returnDto: ReturnDeviceDto) {
     return this.borrowRequestsService.returnDevice(id, returnDto);
   }
@@ -71,4 +74,3 @@ export class BorrowRequestsController {
     return this.borrowRequestsService.cancel(id, req.user);
   }
 }
-

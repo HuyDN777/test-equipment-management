@@ -1,26 +1,61 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { EmployeeLayout } from './components/layout/EmployeeLayout';
+import { Login } from './pages/Login';
+// We will create these pages next
+import { DeviceList } from './pages/DeviceList';
+import { DeviceDetail } from './pages/DeviceDetail';
+import { MyRequests } from './pages/MyRequests';
+import { Profile } from './pages/Profile';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 
-import Login from './pages/Login';
-import DeviceList from './pages/DeviceList';
-import MyRequests from './pages/MyRequests';
+// Protected Route Component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  if (!user || user.role !== 'Employee') {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      
+      {/* Protected Routes inside Layout */}
+      <Route 
+        path="/" 
+        element={
+          <ProtectedRoute>
+            <EmployeeLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/devices" replace />} />
+        <Route path="devices" element={<DeviceList />} />
+        <Route path="devices/:id" element={<DeviceDetail />} />
+        <Route path="my-requests" element={<MyRequests />} />
+        <Route path="profile" element={<Profile />} />
+      </Route>
+
+      
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Định nghĩa các đường dẫn (URL) tương ứng với giao diện */}
-        <Route path="/login" element={<Login />} />
-
-        {/* Trang chủ mặc định hiển thị danh sách thiết bị */}
-        <Route path="/" element={<DeviceList />} />
-
-        {/* Trang xem lịch sử mượn */}
-        <Route path="/my-requests" element={<MyRequests />} />
-
-        {/* Nếu người dùng gõ linh tinh một đường dẫn không tồn tại (404) =>quay về Trang chủ */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

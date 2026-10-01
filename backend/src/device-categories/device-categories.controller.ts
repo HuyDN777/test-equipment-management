@@ -19,6 +19,7 @@ export class DeviceCategoriesController {
   }
 
   @Get()
+  @Roles(UserRole.Admin, UserRole.Employee)
   findAll() {
     return this.deviceCategoriesService.findAll();
   }

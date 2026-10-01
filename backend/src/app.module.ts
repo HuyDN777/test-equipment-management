@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DevicesModule } from './devices/devices.module';
@@ -12,21 +12,25 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { AuthModule } from './auth/auth.module';
 import { ReportsModule } from './reports/reports.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: '123456',
-      database: 'devportal',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.get('DB_HOST', 'localhost'),
+        port: config.get<number>('DB_PORT', 3306),
+        username: config.get('DB_USERNAME', 'root'),
+        password: config.get('DB_PASSWORD', ''),
+        database: config.get('DB_DATABASE', 'devportal'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: config.get('DB_SYNCHRONIZE', 'false') === 'true',
+      }),
     }),
     AuthModule,
     DevicesModule, 
@@ -37,6 +41,7 @@ import { ReportsModule } from './reports/reports.module';
     NotificationsModule, 
     VendorsModule,
     ReportsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

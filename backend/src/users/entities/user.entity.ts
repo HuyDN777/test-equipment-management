@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { BorrowRequest } from '../../borrow-requests/entities/borrow-request.entity';
 import { MaintenanceRecord } from '../../maintenance/entities/maintenance.entity';
 import { AuditLog } from '../../common/entities/audit-log.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
 
 export enum UserRole {
   Admin = 'Admin',
@@ -19,11 +20,23 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ select: false })
   password_hash: string;
+
+  @Column({ default: 0, select: false })
+  token_version: number;
+
+  @Column({ type: 'varchar', length: 64, nullable: true, select: false })
+  reset_password_token_hash: string | null;
+
+  @Column({ type: 'datetime', nullable: true, select: false })
+  reset_password_expires_at: Date | null;
 
   @Column({ nullable: true })
   department: string;
+
+  @Column({ type: 'varchar', length: 2048, nullable: true, default: null })
+  avatar_url: string | null;
 
   @Column({
     type: 'enum',
@@ -43,6 +56,9 @@ export class User {
 
   @OneToMany(() => AuditLog, (auditLog) => auditLog.user)
   auditLogs: AuditLog[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 
   @CreateDateColumn()
   created_at: Date;

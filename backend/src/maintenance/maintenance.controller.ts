@@ -3,6 +3,7 @@ import { MaintenanceService } from './maintenance.service';
 import { CreateMaintenanceDto } from './dto/create-maintenance.dto';
 import { UpdateMaintenanceDto } from './dto/update-maintenance.dto';
 import { CreateCalibrationDto } from './dto/create-calibration.dto';
+import { UpdateCalibrationDto } from './dto/update-calibration.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -47,5 +48,17 @@ export class MaintenanceController {
   @Roles(UserRole.Admin)
   findAllCalibration(@Query('page') page = 1, @Query('limit') limit = 10) {
     return this.maintenanceService.findAllCalibration(+page, +limit);
+  }
+
+  @Get('calibrations/:id')
+  @Roles(UserRole.Admin)
+  findOneCalibration(@Param('id') id: string) {
+    return this.maintenanceService.findOneCalibration(id);
+  }
+
+  @Patch('calibrations/:id')
+  @Roles(UserRole.Admin)
+  updateCalibration(@Param('id') id: string, @Body() dto: UpdateCalibrationDto) {
+    return this.maintenanceService.updateCalibration(id, dto);
   }
 }

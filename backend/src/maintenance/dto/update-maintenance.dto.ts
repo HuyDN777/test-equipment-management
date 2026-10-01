@@ -1,14 +1,22 @@
-import { IsOptional, IsDateString, IsEnum, IsNumber, IsString, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { MaintenanceStatus } from '../entities/maintenance.entity';
 
 export class UpdateMaintenanceDto {
   @IsOptional()
-  @IsDateString({}, { message: 'end_date phải là định dạng ngày hợp lệ (YYYY-MM-DD)' })
+  @IsEnum(MaintenanceStatus)
+  status?: MaintenanceStatus;
+
+  @IsOptional()
+  @IsDateString()
+  start_date?: string;
+
+  @IsOptional()
+  @IsDateString()
   end_date?: string;
 
   @IsOptional()
-  @IsEnum(MaintenanceStatus, { message: 'Trạng thái bảo trì không hợp lệ' })
-  status?: MaintenanceStatus;
+  @IsUUID()
+  vendors_id?: string;
 
   @IsOptional()
   @IsNumber()

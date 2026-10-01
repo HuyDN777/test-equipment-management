@@ -1,29 +1,21 @@
-import { IsNotEmpty, IsUUID, IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 
 export class CreateCalibrationDto {
-  @IsNotEmpty({ message: 'device_id không được để trống' })
-  @IsUUID('all', { message: 'device_id phải là định dạng UUID' })
+  @IsUUID()
   device_id: string;
 
-  @IsOptional()
-  @IsUUID('all', { message: 'vendors_id phải là định dạng UUID' })
-  vendors_id?: string;
+  @IsUUID()
+  vendors_id: string;
 
-  @IsNotEmpty({ message: 'Loại hiệu chuẩn không được để trống' })
   @IsString()
+  @IsNotEmpty()
+  @Matches(/\S/, { message: 'Loại hiệu chuẩn không được để trống' })
+  @MaxLength(255)
   calibration_type: string;
 
-  @IsNotEmpty({ message: 'Ngày hiệu chuẩn không được để trống' })
-  @IsDateString({}, { message: 'calibration_date phải là định dạng ngày hợp lệ (YYYY-MM-DD)' })
-  calibration_date: string;
-
-  @IsNotEmpty({ message: 'Hạn hiệu chuẩn tiếp theo không được để trống' })
-  @IsDateString({}, { message: 'next_due_date phải là định dạng ngày hợp lệ (YYYY-MM-DD)' })
-  next_due_date: string;
-
   @IsOptional()
-  @IsString()
-  result?: string;
+  @IsDateString()
+  planned_date?: string;
 
   @IsOptional()
   @IsString()

@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { MaintenanceService } from './maintenance.service';
 import { CreateCalibrationDto } from './dto/create-calibration.dto';
+import { UpdateCalibrationDto } from './dto/update-calibration.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -20,5 +21,15 @@ export class CalibrationRecordsController {
   @Get()
   findAllCalibration(@Query('page') page = 1, @Query('limit') limit = 10) {
     return this.maintenanceService.findAllCalibration(+page, +limit);
+  }
+
+  @Get(':id')
+  findOneCalibration(@Param('id') id: string) {
+    return this.maintenanceService.findOneCalibration(id);
+  }
+
+  @Patch(':id')
+  updateCalibration(@Param('id') id: string, @Body() dto: UpdateCalibrationDto) {
+    return this.maintenanceService.updateCalibration(id, dto);
   }
 }

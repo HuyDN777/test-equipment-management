@@ -12,7 +12,10 @@ export class CreateDeviceDto {
 
   @IsNotEmpty({ message: 'ID danh mục không được để trống' })
   @IsString()
-  device_category_id: string;
+  device_categories_id: string;
+
+  @IsOptional()
+  specifications?: any;
 
   @IsOptional()
   @IsString()
@@ -37,4 +40,5 @@ export class CreateDeviceDto {
   @IsOptional()
   @IsString()
   image_url?: string;
+
 }

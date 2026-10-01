@@ -1,34 +1,44 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Delete, Query, Request, UseGuards } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('notifications')
+@Controller('api/v1/notifications')
+@UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Post()
-  create(@Body() createNotificationDto: CreateNotificationDto) {
-    return this.notificationsService.create(createNotificationDto);
-  }
-
   @Get()
-  findAll() {
-    return this.notificationsService.findAll();
+  findAll(
+    @Request() req: any,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+    @Query('unread_only') unreadOnly = 'false',
+  ) {
+    return this.notificationsService.findAll(
+      req.user.userId,
+      Number(page),
+      Number(limit),
+      unreadOnly === 'true',
+    );
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.notificationsService.findOne(+id);
+  @Get('unread-count')
+  unreadCount(@Request() req: any) {
+    return this.notificationsService.unreadCount(req.user.userId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
-    return this.notificationsService.update(+id, updateNotificationDto);
+  @Patch('read-all')
+  markAllAsRead(@Request() req: any) {
+    return this.notificationsService.markAllAsRead(req.user.userId);
+  }
+
+  @Patch(':id/read')
+  markAsRead(@Param('id') id: string, @Request() req: any) {
+    return this.notificationsService.markAsRead(id, req.user.userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.notificationsService.remove(+id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    return this.notificationsService.remove(id, req.user.userId);
   }
 }

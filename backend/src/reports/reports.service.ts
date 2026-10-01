@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { BorrowRequest, BorrowRequestStatus } from '../borrow-requests/entities/borrow-request.entity';
-import { CalibrationRecord } from '../maintenance/entities/calibration-record.entity';
+import { CalibrationRecord, CalibrationResult, CalibrationStatus } from '../maintenance/entities/calibration-record.entity';
 import { Device, DeviceStatus } from '../devices/entities/device.entity';
 import { User } from '../users/entities/user.entity';
+import { addCalendarDays, calendarDate } from '../common/calendar-date';
 
 @Injectable()
 export class ReportsService {
@@ -47,21 +48,26 @@ export class ReportsService {
       .getMany();
   }
 
-  async getCalibrationDueDevices(days = 30) {
-    const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(today.getDate() + days);
+  async getCalibrationDueDevices(days = 30, asOfDate = new Date(), overdueDays?: number) {
+    const futureDate = addCalendarDays(calendarDate(asOfDate), days);
 
-    return this.calibrationRepository
+    const query = this.calibrationRepository
       .createQueryBuilder('calib')
       .innerJoinAndSelect('calib.device', 'device')
       .leftJoinAndSelect('calib.vendor', 'vendor')
-      .where('calib.next_due_date <= :futureDate', {
-        futureDate: futureDate.toISOString().split('T')[0],
-      })
+      .where('calib.next_due_date <= :futureDate', { futureDate })
+      .andWhere('calib.status = :status', { status: CalibrationStatus.Completed })
+      .andWhere('calib.result = :result', { result: CalibrationResult.Pass })
+      .andWhere('calib.id = (SELECT latest.id FROM calibration_records latest WHERE latest.device_id = calib.device_id AND latest.status = :latestStatus ORDER BY latest.calibration_date DESC, latest.created_at DESC LIMIT 1)', { latestStatus: CalibrationStatus.Completed })
+      .andWhere('NOT EXISTS (SELECT 1 FROM calibration_records active WHERE active.device_id = calib.device_id AND active.status = :inProgress)', { inProgress: CalibrationStatus.InProgress })
       .andWhere('device.is_deleted = false')
-      .orderBy('calib.next_due_date', 'ASC')
-      .getMany();
+      .orderBy('calib.next_due_date', 'ASC');
+    if (overdueDays !== undefined) {
+      query.andWhere('calib.next_due_date >= :oldestDate', {
+        oldestDate: addCalendarDays(calendarDate(asOfDate), -overdueDays),
+      });
+    }
+    return query.getMany();
   }
 
   async getTopBorrowers(limit = 10) {

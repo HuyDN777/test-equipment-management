@@ -1,20 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { MaintenanceController } from './maintenance.controller';
 import { MaintenanceService } from './maintenance.service';
+import { CalibrationStatus } from './entities/calibration-record.entity';
 
 describe('MaintenanceController', () => {
-  let controller: MaintenanceController;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [MaintenanceController],
-      providers: [MaintenanceService],
-    }).compile();
-
-    controller = module.get<MaintenanceController>(MaintenanceController);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  it('chuyển cập nhật hiệu chuẩn đến service', () => {
+    const service = { updateCalibration: jest.fn() } as unknown as MaintenanceService;
+    const controller = new MaintenanceController(service);
+    controller.updateCalibration('cal-1', { status: CalibrationStatus.InProgress });
+    expect(service.updateCalibration).toHaveBeenCalledWith('cal-1', { status: CalibrationStatus.InProgress });
   });
 });
